@@ -156,17 +156,17 @@ func TestComparisonTypeMismatch(t *testing.T) {
 }
 
 func TestLogic(t *testing.T) {
-	mustBool(t, "真 与 真", true)
+	mustBool(t, "真 且 真", true)
 	mustBool(t, "真 && 假", false)
 	mustBool(t, "假 || 真", true)
 	mustBool(t, "非 假", true)
 	mustBool(t, "!真", false)
-	mustBool(t, "真 与 假 或 真", true)
+	mustBool(t, "真 且 假 或 真", true)
 }
 
 func TestLogicRequiresBool(t *testing.T) {
-	mustError(t, "1 与 真", "布尔")
-	mustError(t, "真 与 1", "布尔")
+	mustError(t, "1 且 真", "布尔")
+	mustError(t, "真 且 1", "布尔")
 	mustError(t, "非 1", "布尔")
 }
 
@@ -200,6 +200,6 @@ func TestUndeclared(t *testing.T) {
 }
 
 func TestShortCircuit(t *testing.T) {
-	mustBool(t, "假 与 (1 除 0 大于 0)", false)
+	mustBool(t, "假 且 (1 除 0 大于 0)", false)
 	mustBool(t, "真 或 (1 除 0 大于 0)", true)
 }

@@ -57,7 +57,7 @@ func TestBasicSymbols(t *testing.T) {
 }
 
 func TestChineseKeywords(t *testing.T) {
-	expect(t, "定义 变量 常量 整数 小数 字符串 布尔 真 假 空 为 加 减 乘 除 取余 等于 不等于 小于 小于等于 大于 大于等于 与 或 非", []token.Token{
+	expect(t, "定义 变量 常量 整数 小数 字符串 布尔 真 假 空 为 加 减 乘 除 取余 等于 不等于 小于 小于等于 大于 大于等于 且 或 非", []token.Token{
 		{Type: token.DEFINE, Literal: "定义"},
 		{Type: token.VAR, Literal: "变量"},
 		{Type: token.CONST, Literal: "常量"},
@@ -80,7 +80,7 @@ func TestChineseKeywords(t *testing.T) {
 		{Type: token.LTE, Literal: "小于等于"},
 		{Type: token.GT, Literal: "大于"},
 		{Type: token.GTE, Literal: "大于等于"},
-		{Type: token.AND, Literal: "与"},
+		{Type: token.AND, Literal: "且"},
 		{Type: token.OR, Literal: "或"},
 		{Type: token.NOT, Literal: "非"},
 		{Type: token.EOF, Literal: ""},

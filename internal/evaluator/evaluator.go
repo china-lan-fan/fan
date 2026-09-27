@@ -250,7 +250,7 @@ func evalIdentifier(ident *ast.Identifier, env *Environment) (object.Object, err
 
 func evalBinaryExpr(expr *ast.BinaryExpr, env *Environment) (object.Object, error) {
 	switch expr.Op {
-	case "与", "&&":
+	case "且", "&&":
 		return evalAndExpr(expr, env)
 	case "或", "||":
 		return evalOrExpr(expr, env)
@@ -272,7 +272,7 @@ func evalAndExpr(expr *ast.BinaryExpr, env *Environment) (object.Object, error) 
 		return nil, err
 	}
 	if left.Kind() != object.KindBool {
-		return nil, &EvalError{Pos: expr.Position, Reason: fmt.Sprintf("与 左侧必须是布尔，实际是 %s", left.Kind())}
+		return nil, &EvalError{Pos: expr.Position, Reason: fmt.Sprintf("且 左侧必须是布尔，实际是 %s", left.Kind())}
 	}
 	if !left.(*object.Bool).Value {
 		return object.False, nil
@@ -282,7 +282,7 @@ func evalAndExpr(expr *ast.BinaryExpr, env *Environment) (object.Object, error) 
 		return nil, err
 	}
 	if right.Kind() != object.KindBool {
-		return nil, &EvalError{Pos: expr.Position, Reason: fmt.Sprintf("与 右侧必须是布尔，实际是 %s", right.Kind())}
+		return nil, &EvalError{Pos: expr.Position, Reason: fmt.Sprintf("且 右侧必须是布尔，实际是 %s", right.Kind())}
 	}
 	return right, nil
 }
@@ -339,7 +339,7 @@ func evalBinaryOp(expr *ast.BinaryExpr, left, right object.Object) (object.Objec
 		return evalCompare(pos, left, right, 1)
 	case "大于等于", ">=":
 		return evalCompare(pos, left, right, 0, 1)
-	case "与", "&&":
+	case "且", "&&":
 		return evalAnd(pos, left, right)
 	case "或", "||":
 		return evalOr(pos, left, right)
@@ -477,13 +477,13 @@ func evalCompare(pos ast.Position, left, right object.Object, accept ...int) (ob
 
 func evalAnd(pos ast.Position, left, right object.Object) (object.Object, error) {
 	if left.Kind() != object.KindBool {
-		return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("与 左侧必须是布尔，实际是 %s", left.Kind())}
+		return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("且 左侧必须是布尔，实际是 %s", left.Kind())}
 	}
 	if !left.(*object.Bool).Value {
 		return object.False, nil
 	}
 	if right.Kind() != object.KindBool {
-		return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("与 右侧必须是布尔，实际是 %s", right.Kind())}
+		return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("且 右侧必须是布尔，实际是 %s", right.Kind())}
 	}
 	return right, nil
 }

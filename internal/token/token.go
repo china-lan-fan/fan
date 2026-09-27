@@ -120,7 +120,7 @@ var keywords = map[string]Type{
 	"小于等于": LTE,
 	"大于":   GT,
 	"大于等于": GTE,
-	"与":    AND,
+	"且":    AND,
 	"或":    OR,
 	"非":    NOT,
 	"如果":   IF,

@@ -149,7 +149,7 @@ func TestIfWithLogicCondition(t *testing.T) {
 	src := strings.Join([]string{
 		`变量 甲 = 5`,
 		`变量 结果 = 0`,
-		`如果 甲 大于 0 与 甲 小于 10 那么`,
+		`如果 甲 大于 0 且 甲 小于 10 那么`,
 		`    结果 = 1`,
 		`结束`,
 		`结果`,
