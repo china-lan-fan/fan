@@ -18,6 +18,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: 发布前检查
+        run: |
+          go vet ./...
+          go test ./...
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
