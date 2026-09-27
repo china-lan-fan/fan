@@ -344,3 +344,83 @@ func TestErrorEqualsNil(t *testing.T) {
 	}, "\n")
 	mustBool(t, src, true)
 }
+
+func TestCompoundAssignment(t *testing.T) {
+	mustInt(t, "变量 x = 10\nx += 5\nx", 15)
+	mustInt(t, "变量 x = 10\nx -= 3\nx", 7)
+	mustInt(t, "变量 x = 4\nx *= 3\nx", 12)
+	mustInt(t, "变量 x = 20\nx /= 4\nx", 5)
+	mustInt(t, "变量 数 = [1, 2, 3]\n数[1] 加等于 4\n数[1]", 6)
+}
+
+func TestCompoundAssignmentArrayAndString(t *testing.T) {
+	mustInspect(t, "变量 x = [1]\nx += [2, 3]\nx", "[1, 2, 3]")
+	res := strings.Join([]string{
+		`变量 x = "你"`,
+		`x 加等于 "好"`,
+		`x`,
+	}, "\n")
+	mustInspect(t, res, "你好")
+}
+
+func TestIncrementDecrement(t *testing.T) {
+	mustInt(t, "变量 i = 1\n变量 旧 = i++\n旧", 1)
+	mustInt(t, "变量 i = 1\ni++\ni", 2)
+	mustInt(t, "变量 i = 1\n++i", 2)
+	mustInt(t, "变量 i = 2\n变量 旧 = i--\n旧", 2)
+	mustInt(t, "变量 i = 2\ni--\ni", 1)
+	mustInt(t, "变量 i = 2\n--i", 1)
+}
+
+func TestVariadicParameters(t *testing.T) {
+	src := strings.Join([]string{
+		`函数 求和(开头 整数，其余 ...整数)`,
+		`    变量 合计 = 开头`,
+		`    遍历 其余 中的 数`,
+		`        合计 加等于 数`,
+		`    结束`,
+		`    返回 合计`,
+		`结束`,
+		`求和(1, 2, 3, 4)`,
+	}, "\n")
+	mustInt(t, src, 10)
+}
+
+func TestVariadicNoExtra(t *testing.T) {
+	src := strings.Join([]string{
+		`函数 f(x 整数，其余 ...整数)`,
+		`    返回 长度(其余)`,
+		`结束`,
+		`f(1)`,
+	}, "\n")
+	mustInt(t, src, 0)
+}
+
+func TestVariadicTypeCheck(t *testing.T) {
+	src := "函数 f(其余 ...整数)\n结束\nf(1, 真)"
+	mustError(t, src, "参数 其余 类型不匹配")
+}
+
+func TestDefaultParameters(t *testing.T) {
+	src := strings.Join([]string{
+		`函数 问候(名字 字符串, 称呼 字符串 = "你好")`,
+		`    返回 称呼 加 "，" 加 名字`,
+		`结束`,
+		`问候("小明")`,
+	}, "\n")
+	mustInspect(t, src, "你好，小明")
+	mustInspect(t, "函数 f(a 整数 = 2, b 整数 = 3)\n返回 a 加 b\n结束\nf(10)", "13")
+	mustInspect(t, "函数 f(a 整数 = 2, b 整数 = 3)\n返回 a 加 b\n结束\nf()", "5")
+}
+
+func TestDefaultParameterEvaluatedEachCall(t *testing.T) {
+	src := strings.Join([]string{
+		`变量 基数 = 1`,
+		`函数 f(x = 基数)`,
+		`    返回 x`,
+		`结束`,
+		`基数 = 9`,
+		`f()`,
+	}, "\n")
+	mustInt(t, src, 9)
+}

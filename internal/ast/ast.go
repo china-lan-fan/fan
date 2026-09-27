@@ -87,6 +87,35 @@ func (a *AssignStmt) String() string {
 	return fmt.Sprintf("%s = %s", a.Name, a.Value.String())
 }
 
+type CompoundAssignStmt struct {
+	Position Position
+	Target   Expression
+	Op       string
+	Value    Expression
+}
+
+func (a *CompoundAssignStmt) Pos() Position  { return a.Position }
+func (a *CompoundAssignStmt) statementNode() {}
+func (a *CompoundAssignStmt) String() string {
+	return fmt.Sprintf("(%s %s %s)", a.Target.String(), a.Op, a.Value.String())
+}
+
+type UpdateExpr struct {
+	Position Position
+	Target   Expression
+	Op       string
+	Prefix   bool
+}
+
+func (a *UpdateExpr) Pos() Position   { return a.Position }
+func (a *UpdateExpr) expressionNode() {}
+func (a *UpdateExpr) String() string {
+	if a.Prefix {
+		return fmt.Sprintf("(%s%s)", a.Op, a.Target.String())
+	}
+	return fmt.Sprintf("(%s%s)", a.Target.String(), a.Op)
+}
+
 type MultiDecl struct {
 	Position   Position
 	IsConst    bool

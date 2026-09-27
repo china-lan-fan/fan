@@ -415,6 +415,28 @@ func (p *Parser) parseVarDecl() ast.Statement {
 	}
 }
 
+func compoundAssignOp(t token.Type) (string, bool) {
+	switch t {
+	case token.PLUS_EQ:
+		return "加", true
+	case token.MINUS_EQ:
+		return "减", true
+	case token.STAR_EQ:
+		return "乘", true
+	case token.SLASH_EQ:
+		return "除", true
+	}
+	return "", false
+}
+
+func assignableExpr(expr ast.Expression) (ast.Expression, bool) {
+	switch expr.(type) {
+	case *ast.Identifier, *ast.IndexExpr, *ast.MemberExpr:
+		return expr, true
+	}
+	return nil, false
+}
+
 func (p *Parser) parseBareDecl() ast.Statement {
 	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
 	name := p.cur.Literal
@@ -478,6 +500,19 @@ func (p *Parser) parseExpressionStatement() ast.Statement {
 				Value:    value,
 			}
 		}
+	}
+	if op, ok := compoundAssignOp(p.cur.Type); ok {
+		target, ok := assignableExpr(expr)
+		if !ok {
+			p.addError(p.cur, "复合赋值左侧必须是变量、下标或字段")
+			return nil
+		}
+		p.next()
+		value := p.parseExpression(LOWEST)
+		if value == nil {
+			return nil
+		}
+		return &ast.CompoundAssignStmt{Position: pos, Target: target, Op: op, Value: value}
 	}
 	return &ast.ExpressionStmt{Position: pos, Expression: expr}
 }
@@ -611,6 +646,14 @@ func (p *Parser) parsePostfix(left ast.Expression) ast.Expression {
 				return nil
 			}
 			left = &ast.CallExpr{Position: pos, Callee: left, Args: args}
+		case token.INC:
+			pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+			left = &ast.UpdateExpr{Position: pos, Target: left, Op: "加", Prefix: false}
+			p.next()
+		case token.DEC:
+			pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+			left = &ast.UpdateExpr{Position: pos, Target: left, Op: "减", Prefix: false}
+			p.next()
 		default:
 			return left
 		}
@@ -777,6 +820,20 @@ func (p *Parser) parsePrefix() ast.Expression {
 		return node
 	case token.CHECK:
 		return p.parseCheckExpression()
+	case token.INC:
+		p.next()
+		target := p.parseExpression(PREC_POSTFIX)
+		if target == nil {
+			return nil
+		}
+		return &ast.UpdateExpr{Position: pos, Target: target, Op: "加", Prefix: true}
+	case token.DEC:
+		p.next()
+		target := p.parseExpression(PREC_POSTFIX)
+		if target == nil {
+			return nil
+		}
+		return &ast.UpdateExpr{Position: pos, Target: target, Op: "减", Prefix: true}
 	case token.MINUS:
 		op := "-"
 		p.next()
@@ -840,6 +897,14 @@ func (p *Parser) parseIndexAssignOrExpr() ast.Statement {
 		return nil
 	}
 	if p.cur.Type != token.ASSIGN {
+		if op, ok := compoundAssignOp(p.cur.Type); ok {
+			p.next()
+			value := p.parseExpression(LOWEST)
+			if value == nil {
+				return nil
+			}
+			return &ast.CompoundAssignStmt{Position: pos, Target: expr, Op: op, Value: value}
+		}
 		return &ast.ExpressionStmt{Position: pos, Expression: expr}
 	}
 	idx, ok := expr.(*ast.IndexExpr)
@@ -1156,9 +1221,9 @@ func (p *Parser) parseMember(left ast.Expression) ast.Expression {
 		if !ok {
 			return nil
 		}
-		return &ast.CallExpr{Position: pos, Callee: node, Args: args}
+		return p.parsePostfix(&ast.CallExpr{Position: pos, Callee: node, Args: args})
 	}
-	return node
+	return p.parsePostfix(node)
 }
 
 func (p *Parser) parseFunctionStatement() ast.Statement {
@@ -1282,6 +1347,7 @@ func (p *Parser) parseParamList() ([]ast.Parameter, bool) {
 	}
 	p.parenDepth++
 	p.next()
+	sawDefault := false
 	for {
 		if p.cur.Type == token.RPAREN {
 			p.parenDepth--
@@ -1295,15 +1361,59 @@ func (p *Parser) parseParamList() ([]ast.Parameter, bool) {
 		}
 		name := p.cur.Literal
 		p.next()
+		variadic := false
+		if p.cur.Type == token.DOT && p.peek.Type == token.DOT && p.peek2.Type == token.DOT {
+			variadic = true
+			p.next()
+			p.next()
+			p.next()
+		}
 		dt := ast.TypeAny
-		if isTypeToken(p.cur.Type) {
+		if variadic {
+			if isTypeToken(p.cur.Type) {
+				dt = parseDeclType(p.cur.Type)
+				p.next()
+			} else if p.cur.Type == token.CLASS {
+				dt = ast.DeclType(p.cur.Literal)
+				p.next()
+			}
+		} else if isTypeToken(p.cur.Type) {
 			dt = parseDeclType(p.cur.Type)
 			p.next()
 		} else if p.cur.Type == token.CLASS || p.cur.Type == token.IDENT {
 			dt = ast.DeclType(p.cur.Literal)
 			p.next()
 		}
-		params = append(params, ast.Parameter{Name: name, Type: dt})
+		var def ast.Expression
+		if !variadic && p.cur.Type == token.ASSIGN {
+			sawDefault = true
+			p.next()
+			def = p.parseExpression(LOWEST)
+			if def == nil {
+				p.parenDepth--
+				return nil, false
+			}
+		} else if sawDefault && !variadic {
+			p.addError(p.cur, "默认参数后面不能再出现普通参数")
+			p.parenDepth--
+			return nil, false
+		}
+		params = append(params, ast.Parameter{Name: name, Type: dt, Variadic: variadic, Default: def})
+		if variadic {
+			if p.cur.Type == token.COMMA {
+				p.addError(p.cur, "可变参数必须是最后一个参数")
+				p.parenDepth--
+				return nil, false
+			}
+			if p.cur.Type != token.RPAREN {
+				p.addError(p.cur, "可变参数必须是最后一个参数")
+				p.parenDepth--
+				return nil, false
+			}
+			p.parenDepth--
+			p.next()
+			return params, true
+		}
 		if p.cur.Type == token.COMMA {
 			p.next()
 			continue

@@ -86,17 +86,35 @@ func (l *Lexer) NextToken() token.Token {
 	case '、':
 		return l.emitAndAdvance(token.COMMA, "、")
 	case '+':
+		if l.peek(1) == '=' {
+			return l.emitAndAdvanceN(token.PLUS_EQ, "+=", 2)
+		}
+		if l.peek(1) == '+' {
+			return l.emitAndAdvanceN(token.INC, "++", 2)
+		}
 		return l.emitAndAdvance(token.PLUS, "+")
 	case '-':
 		if l.peek(1) == '>' {
 			return l.emitAndAdvanceN(token.ARROW, "->", 2)
 		}
+		if l.peek(1) == '=' {
+			return l.emitAndAdvanceN(token.MINUS_EQ, "-=", 2)
+		}
+		if l.peek(1) == '-' {
+			return l.emitAndAdvanceN(token.DEC, "--", 2)
+		}
 		return l.emitAndAdvance(token.MINUS, "-")
 	case '→':
 		return l.emitAndAdvance(token.ARROW, "→")
 	case '*':
+		if l.peek(1) == '=' {
+			return l.emitAndAdvanceN(token.STAR_EQ, "*=", 2)
+		}
 		return l.emitAndAdvance(token.STAR, "*")
 	case '/':
+		if l.peek(1) == '=' {
+			return l.emitAndAdvanceN(token.SLASH_EQ, "/=", 2)
+		}
 		return l.emitAndAdvance(token.SLASH, "/")
 	case '%':
 		return l.emitAndAdvance(token.PERCENT, "%")

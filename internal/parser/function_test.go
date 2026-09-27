@@ -191,6 +191,27 @@ func TestTypedParameters(t *testing.T) {
 	}
 }
 
+func TestDefaultAndVariadicParameters(t *testing.T) {
+	src := `函数 f(a 整数, b 整数 = 2, 其余 ...整数)
+结束`
+	prog := mustParse(t, src)
+	fn := prog.Statements[0].(*ast.VarDecl).Value.(*ast.FunctionLiteral)
+	if len(fn.Params) != 3 {
+		t.Fatalf("应有 3 个参数，实际 %d", len(fn.Params))
+	}
+	if fn.Params[1].Default == nil {
+		t.Fatalf("第二个参数应有默认值")
+	}
+	if !fn.Params[2].Variadic {
+		t.Fatalf("第三个参数应是可变参数")
+	}
+}
+
+func TestInvalidParameterOrder(t *testing.T) {
+	expectError(t, "函数 f(a ...整数, b)\n结束")
+	expectError(t, "函数 f(a = 1, b)\n结束")
+}
+
 func TestTypedParamsMultiReturn(t *testing.T) {
 	src := "函数 商余(a 整数，b 整数) -> (整数，整数)\n    返回 a / b，a % b\n结束"
 	prog := mustParse(t, src)

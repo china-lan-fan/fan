@@ -28,6 +28,10 @@ func Eval(node ast.Node, env *Environment) (object.Object, error) {
 		return evalMultiDecl(n, env)
 	case *ast.MultiAssign:
 		return evalMultiAssign(n, env)
+	case *ast.CompoundAssignStmt:
+		return evalCompoundAssign(n, env)
+	case *ast.UpdateExpr:
+		return evalUpdateExpr(n, env)
 	case *ast.IfStmt:
 		return evalIfStmt(n, env)
 	case *ast.BlockStmt:

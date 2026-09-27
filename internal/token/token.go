@@ -12,7 +12,13 @@ const (
 	FLOAT  Type = "FLOAT"
 	STRING Type = "STRING"
 
-	ASSIGN Type = "ASSIGN"
+	ASSIGN   Type = "ASSIGN"
+	PLUS_EQ  Type = "PLUS_EQ"
+	MINUS_EQ Type = "MINUS_EQ"
+	STAR_EQ  Type = "STAR_EQ"
+	SLASH_EQ Type = "SLASH_EQ"
+	INC      Type = "INC"
+	DEC      Type = "DEC"
 
 	PLUS    Type = "PLUS"
 	MINUS   Type = "MINUS"
@@ -109,6 +115,12 @@ var keywords = map[string]Type{
 	"假":    FALSE,
 	"空":    NIL,
 	"为":    ASSIGN,
+	"加等于":  PLUS_EQ,
+	"减等于":  MINUS_EQ,
+	"乘等于":  STAR_EQ,
+	"除等于":  SLASH_EQ,
+	"自增":   INC,
+	"自减":   DEC,
 	"加":    PLUS,
 	"减":    MINUS,
 	"乘":    STAR,

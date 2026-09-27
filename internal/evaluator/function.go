@@ -51,19 +51,68 @@ func evalMemberExpression(node *ast.MemberExpr, env *Environment) (object.Object
 	return evalFieldAccess(node, env, obj)
 }
 
-func applyFunction(fn *Function, args []object.Object, pos ast.Position) (object.Object, error) {
-	if len(args) != len(fn.Params) {
+func bindArguments(fn *Function, args []object.Object, pos ast.Position) ([]object.Object, error) {
+	values := make([]object.Object, len(fn.Params))
+	for i, param := range fn.Params {
+		if param.Variadic {
+			if i != len(fn.Params)-1 {
+				return nil, &EvalError{Pos: pos, Reason: "可变参数必须是最后一个参数"}
+			}
+			if len(args) < i {
+				return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("函数参数数量不符：至少需要 %d 个，实际 %d 个", i, len(args))}
+			}
+			extra := args[i:]
+			for _, val := range extra {
+				if err := checkDeclType(param.Type, val); err != nil {
+					return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("参数 %s 类型不匹配：%s", param.Name, err.Error())}
+				}
+			}
+			values[i] = &object.Array{Elements: append([]object.Object(nil), extra...)}
+			return values, nil
+		}
+		if len(args) > i {
+			values[i] = args[i]
+			continue
+		}
+		if param.Default != nil {
+			val, err := Eval(param.Default, fn.Env)
+			if err != nil {
+				return nil, err
+			}
+			values[i] = val
+			continue
+		}
 		return nil, &EvalError{
 			Pos:    pos,
 			Reason: fmt.Sprintf("函数参数数量不符：需要 %d 个，实际 %d 个", len(fn.Params), len(args)),
 		}
 	}
+	if len(args) > len(fn.Params) {
+		return nil, &EvalError{
+			Pos:    pos,
+			Reason: fmt.Sprintf("函数参数数量不符：需要 %d 个，实际 %d 个", len(fn.Params), len(args)),
+		}
+	}
+	return values, nil
+}
+
+func applyFunction(fn *Function, args []object.Object, pos ast.Position) (object.Object, error) {
+	boundValues, err := bindArguments(fn, args, pos)
+	if err != nil {
+		return nil, err
+	}
 	env := NewEnclosedEnvironment(fn.Env)
 	for i, param := range fn.Params {
-		if err := checkDeclType(param.Type, args[i]); err != nil {
+		if param.Variadic {
+			if err := env.declare(param.Name, boundValues[i], false, ast.TypeArray); err != nil {
+				return nil, &EvalError{Pos: pos, Reason: err.Error()}
+			}
+			continue
+		}
+		if err := checkDeclType(param.Type, boundValues[i]); err != nil {
 			return nil, &EvalError{Pos: pos, Reason: fmt.Sprintf("参数 %s 类型不匹配：%s", param.Name, err.Error())}
 		}
-		if err := env.declare(param.Name, args[i], false, param.Type); err != nil {
+		if err := env.declare(param.Name, boundValues[i], false, param.Type); err != nil {
 			return nil, &EvalError{Pos: pos, Reason: err.Error()}
 		}
 	}

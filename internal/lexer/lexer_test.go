@@ -56,6 +56,18 @@ func TestBasicSymbols(t *testing.T) {
 	})
 }
 
+func TestCompoundAndUpdateSymbols(t *testing.T) {
+	expect(t, "+= -= *= /= ++ --", []token.Token{
+		{Type: token.PLUS_EQ, Literal: "+="},
+		{Type: token.MINUS_EQ, Literal: "-="},
+		{Type: token.STAR_EQ, Literal: "*="},
+		{Type: token.SLASH_EQ, Literal: "/="},
+		{Type: token.INC, Literal: "++"},
+		{Type: token.DEC, Literal: "--"},
+		{Type: token.EOF, Literal: ""},
+	})
+}
+
 func TestChineseKeywords(t *testing.T) {
 	expect(t, "定义 变量 常量 整数 小数 字符串 布尔 真 假 空 为 加 减 乘 除 取余 等于 不等于 小于 小于等于 大于 大于等于 且 或 非", []token.Token{
 		{Type: token.DEFINE, Literal: "定义"},

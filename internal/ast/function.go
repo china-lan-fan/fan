@@ -6,8 +6,10 @@ import (
 )
 
 type Parameter struct {
-	Name string
-	Type DeclType
+	Name     string
+	Type     DeclType
+	Variadic bool
+	Default  Expression
 }
 
 type FunctionLiteral struct {
@@ -32,10 +34,20 @@ func (n *FunctionLiteral) String() string {
 		if i > 0 {
 			sb.WriteString(", ")
 		}
-		if p.Type != TypeAny {
-			sb.WriteString(string(p.Type) + " ")
+		if p.Variadic {
+			if p.Type != TypeAny {
+				sb.WriteString(string(p.Type) + " ")
+			}
+			sb.WriteString("..." + p.Name)
+		} else {
+			sb.WriteString(p.Name)
+			if p.Type != TypeAny {
+				sb.WriteString(" " + string(p.Type))
+			}
+			if p.Default != nil {
+				sb.WriteString(" = " + p.Default.String())
+			}
 		}
-		sb.WriteString(p.Name)
 	}
 	sb.WriteString(") ")
 	if len(n.ReturnTypes) > 0 {
