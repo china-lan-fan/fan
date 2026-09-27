@@ -53,13 +53,14 @@ jobs:
       - name: 交叉编译 ${{ matrix.target }}
         env:
           CGO_ENABLED: 0
+          TARGET: ${{ matrix.target }}
         run: |
-          os="${{ matrix.target%%-*}}"
-          arch="${{ matrix.target##*-}}"
+          os="${TARGET%%-*}"
+          arch="${TARGET##*-}"
           ext=""
           if [ "$os" = "windows" ]; then ext=".exe"; fi
           GOOS="$os" GOARCH="$arch" go build -trimpath \
-            -ldflags="-s -w -X main.version=ci-${{ github.sha }}" \
+            -ldflags="-s -w -X main.version=ci-${GITHUB_SHA}" \
             -o "fan-${os}-${arch}${ext}" ./cmd/fan
       - name: 上传编译产物
         uses: actions/upload-artifact@v4
