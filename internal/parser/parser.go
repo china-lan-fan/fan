@@ -146,6 +146,8 @@ func (p *Parser) skipStatementEnd() {
 
 func (p *Parser) parseStatement() ast.Statement {
 	switch {
+	case p.cur.Type == token.SWITCH:
+		return p.parseSwitchStatement()
 	case p.cur.Type == token.IF:
 		return p.parseIfStatement()
 	case p.cur.Type == token.WHILE:
@@ -204,6 +206,111 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIndexAssignOrExpr()
 	default:
 		return p.parseExpressionStatement()
+	}
+}
+
+func (p *Parser) parseSwitchStatement() ast.Statement {
+	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+	p.next()
+	var subject ast.Expression
+	if p.cur.Type != token.NEWLINE {
+		subject = p.parseExpression(LOWEST)
+	}
+	p.skipStatementEnd()
+	stmt := &ast.SwitchStmt{Position: pos, Subject: subject}
+	for idx := 0; ; idx++ {
+		branch, ok := p.parseSwitchBranch()
+		if !ok {
+			return nil
+		}
+		if subject == nil && !branch.Guard && !branch.Default {
+			p.addError(p.cur, "无匹配对象时，判断分支应使用 当")
+			return nil
+		}
+		if branch.Default && p.cur.Type != token.END {
+			p.addError(p.cur, "其他 分支必须在最后")
+			return nil
+		}
+		stmt.Branches = append(stmt.Branches, branch)
+		if p.cur.Type == token.END {
+			p.next()
+			return stmt
+		}
+		if p.cur.Type == token.EOF {
+			p.addError(p.cur, "判断 语句缺少 结束")
+			return nil
+		}
+	}
+}
+
+func (p *Parser) parseSwitchBranch() (ast.SwitchBranch, bool) {
+	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+	branch := ast.SwitchBranch{Position: pos}
+	switch p.cur.Type {
+	case token.ASSIGN:
+		p.next()
+		for {
+			value := p.parseExpression(LOWEST)
+			if value == nil {
+				return branch, false
+			}
+			branch.Values = append(branch.Values, value)
+			if p.cur.Type != token.COMMA {
+				break
+			}
+			p.next()
+			continue
+		}
+	case token.WHILE:
+		p.next()
+		condition := p.parseExpression(LOWEST)
+		if condition == nil {
+			return branch, false
+		}
+		branch.Guard = true
+		branch.Values = []ast.Expression{condition}
+	case token.DEFAULT:
+		p.next()
+		branch.Default = true
+	case token.END, token.EOF:
+		p.addError(p.cur, "判断 语句缺少 结束")
+		return branch, false
+	default:
+		p.addError(p.cur, "判断 分支应以 为、当 或 其他 开头")
+		return branch, false
+	}
+	p.skipStatementEnd()
+	body, ok := p.parseSwitchBody()
+	if !ok {
+		return branch, false
+	}
+	branch.Body = body
+	return branch, true
+}
+
+func (p *Parser) parseSwitchBody() (*ast.BlockStmt, bool) {
+	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+	block := &ast.BlockStmt{Position: pos}
+	for {
+		p.skipStatementEnd()
+		switch p.cur.Type {
+		case token.ASSIGN, token.WHILE, token.DEFAULT, token.END, token.EOF:
+			return block, true
+		case token.ILLEGAL:
+			p.addError(p.cur, "非法字符：%s", p.cur.Literal)
+			return nil, false
+		}
+		stmt := p.parseStatement()
+		if stmt == nil {
+			return nil, false
+		}
+		block.Statements = append(block.Statements, stmt)
+		if p.cur.Type != token.NEWLINE &&
+			p.cur.Type != token.ASSIGN && p.cur.Type != token.WHILE &&
+			p.cur.Type != token.DEFAULT && p.cur.Type != token.END && p.cur.Type != token.EOF {
+			p.addError(p.cur, "语句后应换行，实际是 %q", p.cur.Literal)
+			return nil, false
+		}
 	}
 }
 

@@ -64,11 +64,14 @@ const (
 	FALSE Type = "FALSE"
 	NIL   Type = "NIL"
 
-	IF     Type = "IF"
-	THEN   Type = "THEN"
-	ELSE   Type = "ELSE"
-	ELSEIF Type = "ELSEIF"
-	END    Type = "END"
+	IF      Type = "IF"
+	SWITCH  Type = "SWITCH"
+	CASE    Type = "CASE"
+	DEFAULT Type = "DEFAULT"
+	THEN    Type = "THEN"
+	ELSE    Type = "ELSE"
+	ELSEIF  Type = "ELSEIF"
+	END     Type = "END"
 
 	WHILE    Type = "WHILE"
 	LOOP     Type = "LOOP"
@@ -135,6 +138,8 @@ var keywords = map[string]Type{
 	"且":    AND,
 	"或":    OR,
 	"非":    NOT,
+	"判断":   SWITCH,
+	"其他":   DEFAULT,
 	"如果":   IF,
 	"那么":   THEN,
 	"否则":   ELSE,
