@@ -34,3 +34,6 @@ go.work.sum
 # fan binary and backups
 /fan
 *.fan~
+
+# GoReleaser output
+/dist/

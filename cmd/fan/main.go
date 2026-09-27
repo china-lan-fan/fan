@@ -13,7 +13,7 @@ import (
 	"fan/internal/parser"
 )
 
-const version = "0.1.0"
+var version = "dev"
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {

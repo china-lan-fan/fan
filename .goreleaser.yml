@@ -1,0 +1,83 @@
+version: 2
+
+project_name: fan
+
+builds:
+  - id: fan
+    main: ./cmd/fan
+    binary: fan
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+
+archives:
+  - id: default
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    files:
+      - LICENSE
+      - README.md
+      - docs/**
+
+checksum:
+  name_template: checksums.txt
+
+nfpms:
+  - id: packages
+    package_name: fan
+    formats:
+      - deb
+      - rpm
+    section: devel
+    priority: optional
+    license: MIT
+    maintainer: china-lan-fan <xqcaoai@xqcao.com>
+    description: 凡语言（fan）——中文脚本语言解释器
+    homepage: https://china-lan-fan.github.io/
+    bindir: /usr/local/bin
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/fan/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/fan/README.md
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - Merge pull request
+      - Merge branch
+
+release:
+  github:
+    owner: china-lan-fan
+    name: fan
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"
