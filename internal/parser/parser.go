@@ -955,11 +955,11 @@ func (p *Parser) parseForEachStatement() ast.Statement {
 		p.addError(p.cur, "遍历 需要元素变量名")
 		return nil
 	}
-	valueName := p.cur.Literal
+	firstName := p.cur.Literal
 	p.next()
-	indexName := ""
+	secondName := ""
 	if p.cur.Type == token.IDENT {
-		indexName = p.cur.Literal
+		secondName = p.cur.Literal
 		p.next()
 	}
 	body, ok := p.parseBlock()
@@ -972,11 +972,11 @@ func (p *Parser) parseForEachStatement() ast.Statement {
 	}
 	p.next()
 	return &ast.ForEachStmt{
-		Position:  pos,
-		Iterable:  iterable,
-		ValueName: valueName,
-		IndexName: indexName,
-		Body:      body,
+		Position:   pos,
+		Iterable:   iterable,
+		FirstName:  firstName,
+		SecondName: secondName,
+		Body:       body,
 	}
 }
 

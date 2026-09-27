@@ -119,11 +119,11 @@ func evalForEachStmt(stmt *ast.ForEachStmt, outer *Environment) (object.Object, 
 				break
 			}
 			env := NewEnclosedEnvironment(outer)
-			if err := env.declare(stmt.ValueName, iter.Elements[i], false, ast.TypeAny); err != nil {
+			if err := env.declare(stmt.FirstName, iter.Elements[i], false, ast.TypeAny); err != nil {
 				return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 			}
-			if stmt.IndexName != "" {
-				if err := env.declare(stmt.IndexName, &object.Integer{Value: int64(i)}, false, ast.TypeAny); err != nil {
+			if stmt.SecondName != "" {
+				if err := env.declare(stmt.SecondName, &object.Integer{Value: int64(i)}, false, ast.TypeAny); err != nil {
 					return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 				}
 			}
@@ -142,11 +142,11 @@ func evalForEachStmt(stmt *ast.ForEachStmt, outer *Environment) (object.Object, 
 		runes := []rune(iter.Value)
 		for i, r := range runes {
 			env := NewEnclosedEnvironment(outer)
-			if err := env.declare(stmt.ValueName, &object.String{Value: string(r)}, false, ast.TypeAny); err != nil {
+			if err := env.declare(stmt.FirstName, &object.String{Value: string(r)}, false, ast.TypeAny); err != nil {
 				return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 			}
-			if stmt.IndexName != "" {
-				if err := env.declare(stmt.IndexName, &object.Integer{Value: int64(i)}, false, ast.TypeAny); err != nil {
+			if stmt.SecondName != "" {
+				if err := env.declare(stmt.SecondName, &object.Integer{Value: int64(i)}, false, ast.TypeAny); err != nil {
 					return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 				}
 			}
@@ -165,16 +165,17 @@ func evalForEachStmt(stmt *ast.ForEachStmt, outer *Environment) (object.Object, 
 		keys := append([]object.Object(nil), iter.Keys...)
 		for _, key := range keys {
 			env := NewEnclosedEnvironment(outer)
-			if stmt.IndexName == "" {
-				if err := env.declare(stmt.ValueName, key, false, ast.TypeAny); err != nil {
+			if stmt.SecondName == "" {
+				val, _ := iter.Get(key)
+				if err := env.declare(stmt.FirstName, val, false, ast.TypeAny); err != nil {
 					return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 				}
 			} else {
 				val, _ := iter.Get(key)
-				if err := env.declare(stmt.ValueName, val, false, ast.TypeAny); err != nil {
+				if err := env.declare(stmt.FirstName, key, false, ast.TypeAny); err != nil {
 					return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 				}
-				if err := env.declare(stmt.IndexName, key, false, ast.TypeAny); err != nil {
+				if err := env.declare(stmt.SecondName, val, false, ast.TypeAny); err != nil {
 					return nil, &EvalError{Pos: stmt.Position, Reason: err.Error()}
 				}
 			}

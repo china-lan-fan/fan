@@ -55,18 +55,18 @@ func (n *TimesStmt) String() string {
 }
 
 type ForEachStmt struct {
-	Position  Position
-	Iterable  Expression
-	ValueName string
-	IndexName string
-	Body      *BlockStmt
+	Position   Position
+	Iterable   Expression
+	FirstName  string
+	SecondName string
+	Body       *BlockStmt
 }
 
 func (n *ForEachStmt) Pos() Position  { return n.Position }
 func (n *ForEachStmt) statementNode() {}
 func (n *ForEachStmt) String() string {
-	if n.IndexName == "" {
-		return fmt.Sprintf("遍历 %s 中的 %s { %s } 结束", n.Iterable.String(), n.ValueName, n.Body.String())
+	if n.SecondName == "" {
+		return fmt.Sprintf("遍历 %s 中的 %s { %s } 结束", n.Iterable.String(), n.FirstName, n.Body.String())
 	}
-	return fmt.Sprintf("遍历 %s 中的 %s %s { %s } 结束", n.Iterable.String(), n.ValueName, n.IndexName, n.Body.String())
+	return fmt.Sprintf("遍历 %s 中的 %s %s { %s } 结束", n.Iterable.String(), n.FirstName, n.SecondName, n.Body.String())
 }

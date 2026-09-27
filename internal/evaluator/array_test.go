@@ -230,7 +230,19 @@ func TestDictForEach(t *testing.T) {
 	src := strings.Join([]string{
 		`变量 d = {"a": 1, "b": 2}`,
 		`变量 和 = 0`,
-		`遍历 d 中的 v k`,
+		`遍历 d 中的 k v`,
+		`    和 = 和 加 v`,
+		`结束`,
+		`和`,
+	}, "\n")
+	mustInt(t, src, 3)
+}
+
+func TestDictForEachValue(t *testing.T) {
+	src := strings.Join([]string{
+		`变量 d = {"a": 1, "b": 2}`,
+		`变量 和 = 0`,
+		`遍历 d 中的 v`,
 		`    和 = 和 加 v`,
 		`结束`,
 		`和`,

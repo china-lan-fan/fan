@@ -202,11 +202,11 @@ func TestForEachBasic(t *testing.T) {
 	if !ok {
 		t.Fatalf("应为遍历语句，实际 %T", prog.Statements[0])
 	}
-	if stmt.ValueName != "人" {
-		t.Fatalf("元素名应为 人，实际 %s", stmt.ValueName)
+	if stmt.FirstName != "人" {
+		t.Fatalf("元素名应为 人，实际 %s", stmt.FirstName)
 	}
-	if stmt.IndexName != "" {
-		t.Fatalf("无序号时应为空，实际 %s", stmt.IndexName)
+	if stmt.SecondName != "" {
+		t.Fatalf("无序号时应为空，实际 %s", stmt.SecondName)
 	}
 }
 
@@ -214,8 +214,8 @@ func TestForEachWithIndex(t *testing.T) {
 	src := "遍历 名单 中的 人 序号\n    打印(序号, 人)\n结束"
 	prog := mustParse(t, src)
 	stmt := prog.Statements[0].(*ast.ForEachStmt)
-	if stmt.ValueName != "人" || stmt.IndexName != "序号" {
-		t.Fatalf("元素/序号不符：%s %s", stmt.ValueName, stmt.IndexName)
+	if stmt.FirstName != "人" || stmt.SecondName != "序号" {
+		t.Fatalf("元素/序号不符：%s %s", stmt.FirstName, stmt.SecondName)
 	}
 }
 
