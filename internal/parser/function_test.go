@@ -9,7 +9,7 @@ import (
 
 func TestFunctionDefinitionWithParens(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 求和(甲, 乙)`,
+		`函数 求和（甲，乙）`,
 		`    返回 甲 加 乙`,
 		`结束`,
 	}, "\n")
@@ -27,23 +27,9 @@ func TestFunctionDefinitionWithParens(t *testing.T) {
 	}
 }
 
-func TestFunctionDefinitionNoParens(t *testing.T) {
-	src := strings.Join([]string{
-		`函数 求和 甲, 乙`,
-		`    返回 甲 加 乙`,
-		`结束`,
-	}, "\n")
-	prog := mustParse(t, src)
-	decl := prog.Statements[0].(*ast.VarDecl)
-	fn := decl.Value.(*ast.FunctionLiteral)
-	if len(fn.Params) != 2 {
-		t.Fatalf("无括号参数应解析为 2 个，实际 %d", len(fn.Params))
-	}
-}
-
 func TestAnonymousFunction(t *testing.T) {
 	src := strings.Join([]string{
-		`变量 平方 = 函数 数`,
+		`变量 平方 = 函数（数）`,
 		`    返回 数 乘 数`,
 		`结束`,
 	}, "\n")
@@ -186,7 +172,7 @@ func TestDefineFunctionOptional(t *testing.T) {
 }
 
 func TestTypedParameters(t *testing.T) {
-	src := `定义 函数 求和(整数 甲、整数 乙) : 整数
+	src := `定义 函数 求和(甲 整数，乙 整数) -> 整数
     返回 甲 加 乙
 结束`
 	prog := mustParse(t, src)
@@ -205,28 +191,8 @@ func TestTypedParameters(t *testing.T) {
 	}
 }
 
-func TestReturnTypeWithReturnKeyword(t *testing.T) {
-	src := `函数 名称() 返回 字符串
-    返回 "小明"
-结束`
-	prog := mustParse(t, src)
-	fn := prog.Statements[0].(*ast.VarDecl).Value.(*ast.FunctionLiteral)
-	if len(fn.ReturnTypes) != 1 || fn.ReturnTypes[0] != ast.TypeString {
-		t.Fatalf("返回类型应为字符串，实际 %+v", fn.ReturnTypes)
-	}
-}
-
-func TestTypedParamsNoParens(t *testing.T) {
-	src := "函数 问候 字符串 名字\n    打印 名字\n结束"
-	prog := mustParse(t, src)
-	fn := prog.Statements[0].(*ast.VarDecl).Value.(*ast.FunctionLiteral)
-	if len(fn.Params) != 1 || fn.Params[0].Type != ast.TypeString {
-		t.Fatalf("参数类型错误：%+v", fn.Params)
-	}
-}
-
-func TestMultiReturnTypes(t *testing.T) {
-	src := "函数 商余(整数 a、整数 b) : 整数、整数\n    返回 a / b、a % b\n结束"
+func TestTypedParamsMultiReturn(t *testing.T) {
+	src := "函数 商余(a 整数，b 整数) -> (整数，整数)\n    返回 a / b，a % b\n结束"
 	prog := mustParse(t, src)
 	fn := prog.Statements[0].(*ast.VarDecl).Value.(*ast.FunctionLiteral)
 	if len(fn.ReturnTypes) != 2 ||
@@ -279,7 +245,7 @@ func TestTryCatch(t *testing.T) {
 }
 
 func TestErrorType(t *testing.T) {
-	src := "函数 f() : 错误\n    返回 空\n结束"
+	src := "函数 f() -> 错误\n    返回 空\n结束"
 	prog := mustParse(t, src)
 	fn := prog.Statements[0].(*ast.VarDecl).Value.(*ast.FunctionLiteral)
 	if len(fn.ReturnTypes) != 1 || fn.ReturnTypes[0] != ast.TypeError {

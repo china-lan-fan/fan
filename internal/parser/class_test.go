@@ -60,8 +60,8 @@ func TestExternalMethodDef(t *testing.T) {
 		`    变量 整数 宽`,
 		`    变量 整数 高`,
 		`结束`,
-		`定义 模型 的 函数 面积 矩形 r : 整数`,
-		`    返回 r.宽 乘 r.高`,
+		`定义 矩形 的 方法 面积（r 矩形） -> 整数`,
+		`    返回 自己.宽 乘 自己.高`,
 		`结束`,
 	}, "\n")
 	prog := mustParse(t, src)
@@ -69,7 +69,7 @@ func TestExternalMethodDef(t *testing.T) {
 	if !ok {
 		t.Fatalf("应为方法定义，实际 %T", prog.Statements[1])
 	}
-	if method.ClassName != "矩形" || method.MethodName != "面积" || method.Receiver != "r" {
+	if method.ClassName != "矩形" || method.MethodName != "面积" {
 		t.Fatalf("方法定义解析错误：%+v", method)
 	}
 	if len(method.Function.ReturnTypes) != 1 || method.Function.ReturnTypes[0] != ast.TypeInt {
@@ -78,11 +78,11 @@ func TestExternalMethodDef(t *testing.T) {
 }
 
 func TestExternalMethodWithParams(t *testing.T) {
-	src := "模型 的 函数 放大 矩形 r、整数 倍数\n    r.宽 = r.宽 乘 倍数\n结束"
+	src := "定义 矩形 的 方法 放大（倍数 整数）\n    自己.宽 = 自己.宽 乘 倍数\n结束"
 	prog := mustParse(t, src)
 	method := prog.Statements[0].(*ast.MethodDef)
-	if len(method.Function.Params) != 2 {
-		t.Fatalf("应有 2 个参数（接收者+倍数），实际 %d", len(method.Function.Params))
+	if len(method.Function.Params) != 1 {
+		t.Fatalf("应有 1 个参数（倍数），实际 %d", len(method.Function.Params))
 	}
 }
 

@@ -71,16 +71,8 @@ func evalMethodDef(stmt *ast.MethodDef, env *Environment) (object.Object, error)
 	if !ok {
 		return nil, &EvalError{Pos: stmt.Position, Reason: fmt.Sprintf("%s 不是模型", stmt.ClassName)}
 	}
-	params := make([]ast.Parameter, 0, len(stmt.Function.Params))
-	for i, p := range stmt.Function.Params {
-		if i == 0 {
-			params = append(params, ast.Parameter{Name: p.Name, Type: ast.TypeAny})
-			continue
-		}
-		params = append(params, p)
-	}
 	cls.Methods[stmt.MethodName] = &Function{
-		Params:      params,
+		Params:      append([]ast.Parameter(nil), stmt.Function.Params...),
 		Body:        stmt.Function.Body,
 		Env:         env,
 		Name:        stmt.MethodName,
@@ -159,22 +151,14 @@ func (i *Instance) getMethod(name string) (*Function, error) {
 }
 
 func (f *Function) bind(inst *Instance) *Function {
-	params := append([]ast.Parameter(nil), f.Params...)
-	var receiverName string
-	if len(params) > 0 {
-		receiverName = params[0].Name
-		params = params[1:]
-	}
 	bound := &Function{
-		Params:      params,
+		Params:      append([]ast.Parameter(nil), f.Params...),
 		Body:        f.Body,
 		Env:         NewEnclosedEnvironment(f.Env),
 		Name:        f.Name,
 		ReturnTypes: f.ReturnTypes,
 	}
-	if receiverName != "" {
-		_ = bound.Env.declare(receiverName, inst, false, ast.TypeAny)
-	}
+	_ = bound.Env.declare("自己", inst, false, ast.TypeAny)
 	return bound
 }
 

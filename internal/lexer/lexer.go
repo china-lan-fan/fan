@@ -61,10 +61,10 @@ func (l *Lexer) NextToken() token.Token {
 	}
 
 	switch r {
-	case '(':
-		return l.emitAndAdvance(token.LPAREN, "(")
-	case ')':
-		return l.emitAndAdvance(token.RPAREN, ")")
+	case '(', '（':
+		return l.emitAndAdvance(token.LPAREN, string(r))
+	case ')', '）':
+		return l.emitAndAdvance(token.RPAREN, string(r))
 	case '[':
 		return l.emitAndAdvance(token.LBRACK, "[")
 	case ']':
@@ -88,7 +88,12 @@ func (l *Lexer) NextToken() token.Token {
 	case '+':
 		return l.emitAndAdvance(token.PLUS, "+")
 	case '-':
+		if l.peek(1) == '>' {
+			return l.emitAndAdvanceN(token.ARROW, "->", 2)
+		}
 		return l.emitAndAdvance(token.MINUS, "-")
+	case '→':
+		return l.emitAndAdvance(token.ARROW, "→")
 	case '*':
 		return l.emitAndAdvance(token.STAR, "*")
 	case '/':

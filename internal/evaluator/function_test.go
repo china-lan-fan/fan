@@ -7,7 +7,7 @@ import (
 
 func TestFunctionAdd(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 求和(甲, 乙)`,
+		`函数 求和（甲，乙）`,
 		`    返回 甲 加 乙`,
 		`结束`,
 		`求和(2, 3)`,
@@ -15,19 +15,9 @@ func TestFunctionAdd(t *testing.T) {
 	mustInt(t, src, 5)
 }
 
-func TestFunctionNoParensDef(t *testing.T) {
-	src := strings.Join([]string{
-		`函数 求积 甲, 乙`,
-		`    返回 甲 乘 乙`,
-		`结束`,
-		`求积(2, 3)`,
-	}, "\n")
-	mustInt(t, src, 6)
-}
-
 func TestFunctionImplicitCall(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 问候 名字`,
+		`函数 问候（名字）`,
 		`    打印("你好")`,
 		`结束`,
 		`问候 "小明"`,
@@ -39,7 +29,7 @@ func TestFunctionImplicitCall(t *testing.T) {
 
 func TestAnonymousFunction(t *testing.T) {
 	src := strings.Join([]string{
-		`变量 平方 = 函数 数`,
+		`变量 平方 = 函数（数）`,
 		`    返回 数 乘 数`,
 		`结束`,
 		`平方(4)`,
@@ -49,9 +39,9 @@ func TestAnonymousFunction(t *testing.T) {
 
 func TestClosure(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 计数器()`,
+		`函数 计数器（）`,
 		`    变量 值 = 0`,
-		`    返回 函数()`,
+		`    返回 函数（）`,
 		`        值 = 值 加 1`,
 		`        返回 值`,
 		`    结束`,
@@ -186,28 +176,28 @@ func TestFunctionWithArray(t *testing.T) {
 }
 
 func TestTypedParameterCheck(t *testing.T) {
-	src := "函数 问候(字符串 名字)\n    打印 名字\n结束\n问候(123)"
+	src := "函数 问候(名字 字符串)\n    打印 名字\n结束\n问候(123)"
 	mustError(t, src, "参数 名字 类型不匹配")
 }
 
 func TestReturnTypeCheck(t *testing.T) {
-	src := "函数 数值() : 整数\n    返回 \"abc\"\n结束\n数值()"
+	src := "函数 数值() -> 整数\n    返回 \"abc\"\n结束\n数值()"
 	mustError(t, src, "返回值类型不匹配")
 }
 
 func TestTypedFunctionSuccess(t *testing.T) {
-	src := "函数 求和(整数 甲、整数 乙) : 整数\n    返回 甲 加 乙\n结束\n求和(2, 3)"
+	src := "函数 求和(甲 整数、乙 整数) -> 整数\n    返回 甲 加 乙\n结束\n求和(2, 3)"
 	mustInt(t, src, 5)
 }
 
 func TestDefineFunction(t *testing.T) {
-	src := "定义 函数 双倍(整数 数) : 整数\n    返回 数 乘 2\n结束\n双倍(4)"
+	src := "定义 函数 双倍(数 整数) -> 整数\n    返回 数 乘 2\n结束\n双倍(4)"
 	mustInt(t, src, 8)
 }
 
 func TestMultiReturnAndDecl(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 商余(整数 a、整数 b) : 整数、整数`,
+		`函数 商余(a 整数，b 整数) -> (整数，整数)`,
 		`    返回 a / b、a % b`,
 		`结束`,
 		`变量 商、余数 = 商余(10, 3)`,
@@ -218,7 +208,7 @@ func TestMultiReturnAndDecl(t *testing.T) {
 
 func TestMultiReturnSecondValue(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 商余(整数 a、整数 b) : 整数、整数`,
+		`函数 商余(a 整数，b 整数) -> (整数，整数)`,
 		`    返回 a / b、a % b`,
 		`结束`,
 		`变量 商、余数 = 商余(10, 3)`,
@@ -229,10 +219,10 @@ func TestMultiReturnSecondValue(t *testing.T) {
 
 func TestMultiReturnSpread(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 坐标() : 整数、整数`,
+		`函数 坐标() -> (整数，整数)`,
 		`    返回 1、2`,
 		`结束`,
-		`函数 相加(整数 a、整数 b) : 整数`,
+		`函数 相加(a 整数，b 整数) -> 整数`,
 		`    返回 a 加 b`,
 		`结束`,
 		`相加(坐标())`,
@@ -242,7 +232,7 @@ func TestMultiReturnSpread(t *testing.T) {
 
 func TestMultiAssignExisting(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 取值() : 整数、字符串`,
+		`函数 取值() -> (整数，字符串)`,
 		`    返回 1、"x"`,
 		`结束`,
 		`变量 a = 0`,
@@ -254,12 +244,12 @@ func TestMultiAssignExisting(t *testing.T) {
 }
 
 func TestMultiReturnCountMismatch(t *testing.T) {
-	src := "函数 f() : 整数、整数\n    返回 1\n结束\nf()"
+	src := "函数 f() -> (整数，整数)\n    返回 1\n结束\nf()"
 	mustError(t, src, "返回值数量不符")
 }
 
 func TestMultiAssignCountMismatch(t *testing.T) {
-	src := "函数 f() : 整数\n    返回 1\n结束\n变量 a、b = f()"
+	src := "函数 f() -> 整数\n    返回 1\n结束\n变量 a、b = f()"
 	mustError(t, src, "多目标赋值")
 }
 
@@ -275,7 +265,7 @@ func TestMultiReturnNoType(t *testing.T) {
 }
 
 func TestSingleReturnNotWrapped(t *testing.T) {
-	src := "函数 f() : 整数\n    返回 1\n结束\n变量 x = f()\nx"
+	src := "函数 f() -> 整数\n    返回 1\n结束\n变量 x = f()\nx"
 	mustInt(t, src, 1)
 }
 
@@ -292,7 +282,7 @@ func TestErrorConstructor(t *testing.T) {
 
 func TestErrorReturnAndCheck(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 除法(整数 a、整数 b) : 整数、错误`,
+		`函数 除法(a 整数，b 整数) -> (整数，错误)`,
 		`    如果 b 等于 0 那么`,
 		`        返回 0、错误("零")`,
 		`    结束`,
@@ -315,10 +305,10 @@ func TestErrorReturnAndCheck(t *testing.T) {
 
 func TestCheckPropagation(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 内层() : 整数、错误`,
+		`函数 内层() -> (整数，错误)`,
 		`    返回 0、错误("坏")`,
 		`结束`,
-		`函数 外层() : 整数、错误`,
+		`函数 外层() -> (整数，错误)`,
 		`    变量 x = 检查 内层()`,
 		`    返回 x、空`,
 		`结束`,
@@ -336,7 +326,7 @@ func TestCheckPropagation(t *testing.T) {
 
 func TestCheckSuccess(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 f() : 整数、错误`,
+		`函数 f() -> (整数，错误)`,
 		`    返回 42、空`,
 		`结束`,
 		`变量 x = 检查 f()`,
@@ -347,7 +337,7 @@ func TestCheckSuccess(t *testing.T) {
 
 func TestErrorEqualsNil(t *testing.T) {
 	src := strings.Join([]string{
-		`函数 f() : 错误`,
+		`函数 f() -> 错误`,
 		`    返回 空`,
 		`结束`,
 		`f() 等于 空`,

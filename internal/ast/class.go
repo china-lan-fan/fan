@@ -21,7 +21,6 @@ type MethodDef struct {
 	Position   Position
 	ClassName  string
 	MethodName string
-	Receiver   string
 	Function   *FunctionLiteral
 }
 
@@ -47,7 +46,7 @@ func (n *ClassStmt) String() string {
 func (n *MethodDef) Pos() Position  { return n.Position }
 func (n *MethodDef) statementNode() {}
 func (n *MethodDef) String() string {
-	return fmt.Sprintf("模型 %s 的 函数 %s %s %s", n.ClassName, n.MethodName, n.Receiver, n.Function.String())
+	return fmt.Sprintf("定义 %s 的 方法 %s %s", n.ClassName, n.MethodName, n.Function.String())
 }
 
 type FieldAssignExpr struct {

@@ -111,6 +111,14 @@ func checkDeclType(dt ast.DeclType, val object.Object) error {
 			return nil
 		}
 		want = object.KindError
+	default:
+		if val.Kind() == object.KindNil {
+			return nil
+		}
+		if inst, ok := val.(*Instance); ok && inst.Class.Name == string(dt) {
+			return nil
+		}
+		return fmt.Errorf("类型不匹配：声明为 %s，实际为 %s", dt, val.Kind())
 	}
 	if val.Kind() != want {
 		return fmt.Errorf("类型不匹配：声明为 %s，实际为 %s", dt, val.Kind())

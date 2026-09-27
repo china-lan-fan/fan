@@ -38,6 +38,9 @@ const (
 	LBRACE Type = "LBRACE"
 	RBRACE Type = "RBRACE"
 	COMMA  Type = "COMMA"
+	ARROW  Type = "ARROW"
+	METHOD Type = "METHOD"
+	SELF   Type = "SELF"
 
 	DEFINE Type = "DEFINE"
 	VAR    Type = "VAR"
@@ -142,6 +145,8 @@ var keywords = map[string]Type{
 	"捕获":   CATCH,
 	"检查":   CHECK,
 	"的":    MEMBER,
+	"方法":   METHOD,
+	"自己":   SELF,
 	"类":    CLASS,
 	"模型":   CLASS,
 	"嵌入":   EMBED,

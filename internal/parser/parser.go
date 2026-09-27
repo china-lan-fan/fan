@@ -66,6 +66,7 @@ type Parser struct {
 	l              *lexer.Lexer
 	cur            token.Token
 	peek           token.Token
+	peek2          token.Token
 	errors         Errors
 	parenDepth     int
 	implicitCallOK bool
@@ -73,9 +74,14 @@ type Parser struct {
 
 func New(source string) *Parser {
 	p := &Parser{l: lexer.New(source)}
-	p.next()
-	p.next()
+	p.cur = p.loadNextToken()
+	p.peek = p.loadNextToken()
+	p.peek2 = p.loadNextToken()
 	return p
+}
+
+func (p *Parser) loadNextToken() token.Token {
+	return p.l.NextToken()
 }
 
 func ParseProgram(source string) (*ast.Program, Errors) {
@@ -88,11 +94,13 @@ func (p *Parser) Errors() Errors { return p.errors }
 
 func (p *Parser) next() {
 	p.cur = p.peek
-	p.peek = p.l.NextToken()
+	p.peek = p.peek2
+	p.peek2 = p.loadNextToken()
 	if p.parenDepth > 0 {
 		for p.cur.Type == token.NEWLINE {
 			p.cur = p.peek
-			p.peek = p.l.NextToken()
+			p.peek = p.peek2
+			p.peek2 = p.loadNextToken()
 		}
 	}
 }
@@ -154,17 +162,13 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseExportStatement()
 	case p.cur.Type == token.DEFINE:
 		p.next()
-		switch p.cur.Type {
-		case token.FUNCTION:
+		switch {
+		case p.cur.Type == token.FUNCTION:
 			return p.parseFunctionStatement()
-		case token.CLASS:
-			if p.peek.Type == token.MEMBER {
-				classTok := p.cur
-				p.next()
-				p.next()
-				return p.parseMethodDefinition(classTok)
-			}
+		case p.cur.Type == token.CLASS:
 			return p.parseClassStatement()
+		case p.cur.Type == token.IDENT && p.peek.Type == token.MEMBER:
+			return p.parseIdentMemberStatement()
 		default:
 			return p.parseVarDecl()
 		}
@@ -173,13 +177,9 @@ func (p *Parser) parseStatement() ast.Statement {
 	case p.cur.Type == token.RETURN:
 		return p.parseReturnStatement()
 	case p.cur.Type == token.CLASS:
-		if p.peek.Type == token.MEMBER {
-			classTok := p.cur
-			p.next()
-			p.next()
-			return p.parseMethodDefinition(classTok)
-		}
 		return p.parseClassStatement()
+	case p.cur.Type == token.IDENT && p.peek.Type == token.MEMBER:
+		return p.parseIdentMemberStatement()
 	case p.cur.Type == token.BREAK:
 		stmt := &ast.BreakStmt{Position: ast.Position{Line: p.cur.Line, Column: p.cur.Column}}
 		p.next()
@@ -767,7 +767,7 @@ func (p *Parser) parsePrefix() ast.Expression {
 		node := &ast.NilLiteral{Position: pos}
 		p.next()
 		return node
-	case token.IDENT:
+	case token.IDENT, token.SELF:
 		node := &ast.Identifier{Position: pos, Name: p.cur.Literal}
 		p.next()
 		return node
@@ -1024,28 +1024,20 @@ func (p *Parser) parseExportStatement() ast.Statement {
 	case token.FUNCTION:
 		inner = p.parseFunctionStatement()
 	case token.CLASS:
+		inner = p.parseClassStatement()
+	case token.IDENT:
 		if p.peek.Type == token.MEMBER {
-			classTok := p.cur
-			p.next()
-			p.next()
-			inner = p.parseMethodDefinition(classTok)
-		} else {
-			inner = p.parseClassStatement()
+			inner = p.parseMethodDefinition()
 		}
 	case token.DEFINE:
 		p.next()
-		switch p.cur.Type {
-		case token.FUNCTION:
+		switch {
+		case p.cur.Type == token.FUNCTION:
 			inner = p.parseFunctionStatement()
-		case token.CLASS:
-			if p.peek.Type == token.MEMBER {
-				classTok := p.cur
-				p.next()
-				p.next()
-				inner = p.parseMethodDefinition(classTok)
-			} else {
-				inner = p.parseClassStatement()
-			}
+		case p.cur.Type == token.CLASS:
+			inner = p.parseClassStatement()
+		case p.cur.Type == token.IDENT && p.peek.Type == token.MEMBER:
+			inner = p.parseMethodDefinition()
 		default:
 			inner = p.parseVarDecl()
 		}
@@ -1223,37 +1215,48 @@ func (p *Parser) parseFunctionLiteral() *ast.FunctionLiteral {
 }
 
 func (p *Parser) parseReturnTypes() ([]ast.DeclType, bool) {
-	var first token.Type
-	var saw bool
-	if p.cur.Type == token.COLON {
-		p.next()
-		saw = true
-	} else if p.cur.Type == token.RETURN {
-		first = p.cur.Type
-		p.next()
-		saw = true
-	}
-	if !saw {
+	if p.cur.Type != token.ARROW {
 		return nil, true
 	}
-	var types []ast.DeclType
-	for {
-		if !isTypeToken(p.cur.Type) {
-			if first == token.RETURN {
-				p.addError(p.cur, "返回 后应为类型")
-			} else {
-				p.addError(p.cur, "返回类型应为 整数/小数/字符串/布尔/数组")
+	p.next()
+	if p.cur.Type == token.LPAREN {
+		p.parenDepth++
+		p.next()
+		var types []ast.DeclType
+		for {
+			if p.cur.Type == token.RPAREN {
+				p.parenDepth--
+				p.next()
+				return types, true
 			}
+			if !isTypeToken(p.cur.Type) && p.cur.Type != token.CLASS && p.cur.Type != token.IDENT {
+				p.addError(p.cur, "括号内应为返回类型")
+				p.parenDepth--
+				return nil, false
+			}
+			types = append(types, ast.DeclType(p.cur.Literal))
+			p.next()
+			if p.cur.Type == token.COMMA {
+				p.next()
+				continue
+			}
+			if p.cur.Type == token.RPAREN {
+				p.parenDepth--
+				p.next()
+				return types, true
+			}
+			p.addError(p.cur, "返回类型应以 , 分隔或以 ) 结束")
+			p.parenDepth--
 			return nil, false
 		}
-		types = append(types, parseDeclType(p.cur.Type))
-		p.next()
-		if p.cur.Type == token.COMMA {
-			p.next()
-			continue
-		}
-		return types, true
 	}
+	if !isTypeToken(p.cur.Type) && p.cur.Type != token.CLASS && p.cur.Type != token.IDENT {
+		p.addError(p.cur, "-> 后应为返回类型")
+		return nil, false
+	}
+	types := []ast.DeclType{ast.DeclType(p.cur.Literal)}
+	p.next()
+	return types, true
 }
 
 func (p *Parser) parseExpressionList() ([]ast.Expression, bool) {
@@ -1274,63 +1277,45 @@ func (p *Parser) parseExpressionList() ([]ast.Expression, bool) {
 
 func (p *Parser) parseParamList() ([]ast.Parameter, bool) {
 	var params []ast.Parameter
-	parseOne := func() (ast.Parameter, bool) {
+	if p.cur.Type != token.LPAREN {
+		return nil, false
+	}
+	p.parenDepth++
+	p.next()
+	for {
+		if p.cur.Type == token.RPAREN {
+			p.parenDepth--
+			p.next()
+			return params, true
+		}
+		if p.cur.Type != token.IDENT {
+			p.addError(p.cur, "参数名应为标识符")
+			p.parenDepth--
+			return nil, false
+		}
+		name := p.cur.Literal
+		p.next()
 		dt := ast.TypeAny
 		if isTypeToken(p.cur.Type) {
 			dt = parseDeclType(p.cur.Type)
 			p.next()
+		} else if p.cur.Type == token.CLASS || p.cur.Type == token.IDENT {
+			dt = ast.DeclType(p.cur.Literal)
+			p.next()
 		}
-		if p.cur.Type != token.IDENT {
-			p.addError(p.cur, "参数名应为标识符")
-			return ast.Parameter{}, false
-		}
-		name := p.cur.Literal
-		p.next()
-		return ast.Parameter{Name: name, Type: dt}, true
-	}
-	if p.cur.Type == token.LPAREN {
-		p.parenDepth++
-		p.next()
-		for {
-			if p.cur.Type == token.RPAREN {
-				p.parenDepth--
-				p.next()
-				return params, true
-			}
-			param, ok := parseOne()
-			if !ok {
-				p.parenDepth--
-				return nil, false
-			}
-			params = append(params, param)
-			if p.cur.Type == token.COMMA {
-				p.next()
-				continue
-			}
-			if p.cur.Type == token.RPAREN {
-				p.parenDepth--
-				p.next()
-				return params, true
-			}
-			p.addError(p.cur, "参数列表应以 , 分隔或以 ) 结束")
-			p.parenDepth--
-			return nil, false
-		}
-	}
-	if p.cur.Type != token.IDENT && !isTypeToken(p.cur.Type) {
-		return params, true
-	}
-	for {
-		param, ok := parseOne()
-		if !ok {
-			return nil, false
-		}
-		params = append(params, param)
+		params = append(params, ast.Parameter{Name: name, Type: dt})
 		if p.cur.Type == token.COMMA {
 			p.next()
 			continue
 		}
-		return params, true
+		if p.cur.Type == token.RPAREN {
+			p.parenDepth--
+			p.next()
+			return params, true
+		}
+		p.addError(p.cur, "参数列表应以 , 分隔或以 ) 结束")
+		p.parenDepth--
+		return nil, false
 	}
 }
 
@@ -1456,10 +1441,28 @@ func (p *Parser) parseClassStatement() ast.Statement {
 	}
 }
 
-func (p *Parser) parseMethodDefinition(_ token.Token) ast.Statement {
+func (p *Parser) parseIdentMemberStatement() ast.Statement {
+	if p.peekTwo().Type == token.METHOD {
+		return p.parseMethodDefinition()
+	}
+	return p.parseExpressionStatement()
+}
+
+func (p *Parser) peekTwo() token.Token {
+	return p.peek2
+}
+
+func (p *Parser) parseMethodDefinition() ast.Statement {
 	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
-	if p.cur.Type != token.FUNCTION {
-		p.addError(p.cur, "模型扩展方法需要 函数 关键字")
+	className := p.cur.Literal
+	p.next()
+	if p.cur.Type != token.MEMBER {
+		p.addError(p.cur, "方法定义应为：定义 模型名 的 方法 …")
+		return nil
+	}
+	p.next()
+	if p.cur.Type != token.METHOD {
+		p.addError(p.cur, "模型成员定义应使用 方法 关键字")
 		return nil
 	}
 	p.next()
@@ -1469,19 +1472,7 @@ func (p *Parser) parseMethodDefinition(_ token.Token) ast.Statement {
 	}
 	methodName := p.cur.Literal
 	p.next()
-	if p.cur.Type != token.IDENT {
-		p.addError(p.cur, "方法需要模型类型名")
-		return nil
-	}
-	className := p.cur.Literal
-	p.next()
-	if p.cur.Type != token.IDENT {
-		p.addError(p.cur, "方法需要接收者参数名")
-		return nil
-	}
-	receiver := p.cur.Literal
-	p.next()
-	params, ok := p.parseMethodParams(receiver)
+	params, ok := p.parseParamList()
 	if !ok {
 		return nil
 	}
@@ -1497,7 +1488,6 @@ func (p *Parser) parseMethodDefinition(_ token.Token) ast.Statement {
 		Position:   pos,
 		ClassName:  className,
 		MethodName: methodName,
-		Receiver:   receiver,
 		Function: &ast.FunctionLiteral{
 			Position:    pos,
 			Params:      params,
@@ -1506,89 +1496,6 @@ func (p *Parser) parseMethodDefinition(_ token.Token) ast.Statement {
 			ReturnTypes: retTypes,
 		},
 	}
-}
-
-func (p *Parser) parseMethodParams(receiver string) ([]ast.Parameter, bool) {
-	params := []ast.Parameter{{Name: receiver, Type: ast.TypeAny}}
-	if p.cur.Type == token.LPAREN {
-		p.parenDepth++
-		p.next()
-		for {
-			if p.cur.Type == token.RPAREN {
-				p.parenDepth--
-				p.next()
-				return params, true
-			}
-			dt := ast.TypeAny
-			if isTypeToken(p.cur.Type) {
-				dt = parseDeclType(p.cur.Type)
-				p.next()
-			}
-			if p.cur.Type != token.IDENT {
-				p.addError(p.cur, "参数名应为标识符")
-				p.parenDepth--
-				return nil, false
-			}
-			params = append(params, ast.Parameter{Name: p.cur.Literal, Type: dt})
-			p.next()
-			if p.cur.Type == token.COMMA {
-				p.next()
-				continue
-			}
-			if p.cur.Type == token.RPAREN {
-				p.parenDepth--
-				p.next()
-				return params, true
-			}
-			p.addError(p.cur, "参数列表应以 , 分隔或以 ) 结束")
-			p.parenDepth--
-			return nil, false
-		}
-	}
-	for {
-		if p.cur.Type == token.COMMA {
-			p.next()
-		}
-		if !isTypeToken(p.cur.Type) && p.cur.Type != token.IDENT {
-			break
-		}
-		dt := ast.TypeAny
-		if isTypeToken(p.cur.Type) {
-			dt = parseDeclType(p.cur.Type)
-			p.next()
-		}
-		if p.cur.Type != token.IDENT {
-			p.addError(p.cur, "参数名应为标识符")
-			return nil, false
-		}
-		params = append(params, ast.Parameter{Name: p.cur.Literal, Type: dt})
-		p.next()
-	}
-	return params, true
-}
-
-func (p *Parser) parseMethodLiteral() *ast.FunctionLiteral {
-	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
-	p.next()
-	if p.cur.Type != token.IDENT {
-		p.addError(p.cur, "方法需要名字")
-		return nil
-	}
-	name := p.cur.Literal
-	p.next()
-	params, ok := p.parseParamList()
-	if !ok {
-		return nil
-	}
-	retTypes, ok := p.parseReturnTypes()
-	if !ok {
-		return nil
-	}
-	body, ok := p.parseFunctionBody()
-	if !ok {
-		return nil
-	}
-	return &ast.FunctionLiteral{Position: pos, Params: params, Body: body, Name: name, ReturnTypes: retTypes}
 }
 
 func parseDeclType(t token.Type) ast.DeclType {
