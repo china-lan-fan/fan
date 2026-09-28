@@ -93,8 +93,8 @@ func TestImplicitReceiverCall(t *testing.T) {
 func TestMemberNoArgCall(t *testing.T) {
 	prog := mustParse(t, "名单 的 长度")
 	stmt := prog.Statements[0].(*ast.ExpressionStmt)
-	if _, ok := stmt.Expression.(*ast.MemberExpr); !ok {
-		t.Fatalf("应为成员访问，实际 %T", stmt.Expression)
+	if _, ok := stmt.Expression.(*ast.MaybeCallExpr); !ok {
+		t.Fatalf("应为可能调用表达式，实际 %T", stmt.Expression)
 	}
 }
 

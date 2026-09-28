@@ -641,6 +641,14 @@ func (p *Parser) parseExpression(prec precedence) ast.Expression {
 			p.cur.Type == token.THEN || p.cur.Type == token.ELSE || p.cur.Type == token.ELSEIF ||
 			p.cur.Type == token.LOOP || p.cur.Type == token.TIMES || p.cur.Type == token.UNTIL ||
 			p.cur.Type == token.INOF || p.cur.Type == token.COLON {
+			if p.implicitCallOK && (p.cur.Type == token.NEWLINE || p.cur.Type == token.EOF) {
+				switch expr := left.(type) {
+				case *ast.Identifier:
+					return &ast.MaybeCallExpr{Position: left.Pos(), Callee: expr, AutoCall: true}
+				case *ast.MemberExpr:
+					return &ast.MaybeCallExpr{Position: left.Pos(), Callee: expr, AutoCall: true}
+				}
+			}
 			return left
 		}
 		if p.cur.Type == token.MEMBER || p.cur.Type == token.DOT {
@@ -931,14 +939,20 @@ func (p *Parser) parsePrefix() ast.Expression {
 		return p.parseCheckExpression()
 	case token.INC:
 		p.next()
+		implicit := p.implicitCallOK
+		p.implicitCallOK = false
 		target := p.parseExpression(PREC_POSTFIX)
+		p.implicitCallOK = implicit
 		if target == nil {
 			return nil
 		}
 		return &ast.UpdateExpr{Position: pos, Target: target, Op: "加", Prefix: true}
 	case token.DEC:
 		p.next()
+		implicit := p.implicitCallOK
+		p.implicitCallOK = false
 		target := p.parseExpression(PREC_POSTFIX)
+		p.implicitCallOK = implicit
 		if target == nil {
 			return nil
 		}

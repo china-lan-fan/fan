@@ -280,6 +280,18 @@ func (n *UnaryExpr) String() string {
 	return fmt.Sprintf("(%s%s%s)", n.Op, sep, n.Right.String())
 }
 
+type MaybeCallExpr struct {
+	Position Position
+	Callee   Expression
+	AutoCall bool
+}
+
+func (n *MaybeCallExpr) Pos() Position   { return n.Position }
+func (n *MaybeCallExpr) expressionNode() {}
+func (n *MaybeCallExpr) String() string {
+	return n.Callee.String()
+}
+
 type TernaryExpr struct {
 	Position Position
 	Cond     Expression

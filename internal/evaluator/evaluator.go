@@ -92,6 +92,8 @@ func Eval(node ast.Node, env *Environment) (object.Object, error) {
 		return object.Null, nil
 	case *ast.Identifier:
 		return evalIdentifier(n, env)
+	case *ast.MaybeCallExpr:
+		return evalMaybeCallExpr(n, env)
 	case *ast.TernaryExpr:
 		return evalTernaryExpr(n, env)
 	case *ast.BinaryExpr:
@@ -252,6 +254,34 @@ func evalIdentifier(ident *ast.Identifier, env *Environment) (object.Object, err
 	val, ok := env.get(ident.Name)
 	if !ok {
 		return nil, fmt.Errorf("变量 %s 未声明", ident.Name)
+	}
+	return val, nil
+}
+
+func evalMaybeCallExpr(expr *ast.MaybeCallExpr, env *Environment) (object.Object, error) {
+	if member, ok := expr.Callee.(*ast.MemberExpr); ok {
+		target, err := Eval(member.Object, env)
+		if err != nil {
+			return nil, err
+		}
+		if !expr.AutoCall {
+			return evalFieldAccess(member, env, target)
+		}
+		if inst, ok := target.(*Instance); ok {
+			if fn := inst.Class.lookupMethod(member.Name); fn != nil && len(fn.Params) == 0 {
+				return applyFunction(fn.bind(inst), nil, expr.Position)
+			}
+		}
+		return evalFieldAccess(member, env, target)
+	}
+	val, err := Eval(expr.Callee, env)
+	if err != nil {
+		return nil, err
+	}
+	if expr.AutoCall {
+		if fn, ok := val.(*Function); ok && len(fn.Params) == 0 {
+			return applyFunction(fn, nil, expr.Position)
+		}
 	}
 	return val, nil
 }
