@@ -25,26 +25,69 @@ func NewLoader(modulesDir string) *Loader {
 	}
 }
 
+func hasFanExtension(path string) bool {
+	return strings.HasSuffix(path, ".fan") || strings.HasSuffix(path, ".凡")
+}
+
+func existingPath(path string) (string, bool) {
+	if _, err := os.Stat(path); err != nil {
+		return "", false
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", false
+	}
+	return abs, true
+}
+
+func firstExistingPath(paths ...string) (string, bool) {
+	for _, path := range paths {
+		if abs, ok := existingPath(path); ok {
+			return abs, true
+		}
+	}
+	return "", false
+}
+
 func (l *Loader) resolvePath(base string, path string) (string, error) {
-	if strings.HasSuffix(path, ".fan") || filepath.IsAbs(path) {
-		return filepath.Abs(path)
-	}
-	if base != "" {
-		candidate := filepath.Join(base, path+".fan")
-		if _, err := os.Stat(candidate); err == nil {
-			return filepath.Abs(candidate)
+	if hasFanExtension(path) {
+		if filepath.IsAbs(path) {
+			if abs, ok := existingPath(path); ok {
+				return abs, nil
+			}
+		} else if base != "" {
+			if abs, ok := firstExistingPath(filepath.Join(base, path), path); ok {
+				return abs, nil
+			}
+		} else if abs, ok := existingPath(path); ok {
+			return abs, nil
 		}
-	}
-	if l.modulesDir != "" {
-		candidate := filepath.Join(l.modulesDir, path+".fan")
-		if _, err := os.Stat(candidate); err == nil {
-			return filepath.Abs(candidate)
+	} else if filepath.IsAbs(path) {
+		if abs, ok := firstExistingPath(path+".凡", path+".fan"); ok {
+			return abs, nil
 		}
-	}
-	if !strings.HasSuffix(path, ".fan") {
-		candidate := path + ".fan"
-		if _, err := os.Stat(candidate); err == nil {
-			return filepath.Abs(candidate)
+	} else {
+		candidates := []string{path + ".凡", path + ".fan"}
+		if base != "" {
+			baseCandidates := make([]string, 0, 4)
+			for _, candidate := range candidates {
+				baseCandidates = append(baseCandidates, filepath.Join(base, candidate))
+			}
+			if abs, ok := firstExistingPath(baseCandidates...); ok {
+				return abs, nil
+			}
+		}
+		if l.modulesDir != "" {
+			moduleCandidates := make([]string, 0, 2)
+			for _, candidate := range candidates {
+				moduleCandidates = append(moduleCandidates, filepath.Join(l.modulesDir, candidate))
+			}
+			if abs, ok := firstExistingPath(moduleCandidates...); ok {
+				return abs, nil
+			}
+		}
+		if abs, ok := firstExistingPath(candidates...); ok {
+			return abs, nil
 		}
 	}
 	return "", fmt.Errorf("找不到模块：%s", path)

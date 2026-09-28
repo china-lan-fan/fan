@@ -51,7 +51,7 @@ nfpms:
     priority: optional
     license: MIT
     maintainer: china-lan-fan <xqcaoai@xqcao.com>
-    description: 凡语言（fan）——中文脚本语言解释器
+    description: 凡语言（fan）——中文通用脚本语言解释器
     homepage: https://china-lan-fan.github.io/
     bindir: /usr/local/bin
     contents:

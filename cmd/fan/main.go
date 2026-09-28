@@ -29,7 +29,7 @@ func run(args []string) error {
 	}
 	switch args[0] {
 	case "version", "-v", "--version":
-		fmt.Println("fan", version)
+		fmt.Println("凡语言", version, "（命令名：fan）")
 		return nil
 	case "run":
 		if len(args) < 2 {
@@ -79,7 +79,7 @@ func absPath(path string) string {
 func runREPL(in io.Reader, out io.Writer) error {
 	env := evaluator.NewEnvironment()
 	scanner := bufio.NewScanner(in)
-	fmt.Fprintln(out, "fan REPL，输入 :退出 结束")
+	fmt.Fprintln(out, "凡语言 REPL，输入 :退出 结束")
 	for {
 		fmt.Fprint(out, "fan> ")
 		if !scanner.Scan() {
@@ -112,7 +112,7 @@ func runREPL(in io.Reader, out io.Writer) error {
 }
 
 func printUsage() {
-	fmt.Println("fan —— 中文脚本语言")
+	fmt.Println("凡语言 —— 中文通用脚本语言（命令名：fan）")
 	fmt.Println("用法：")
 	fmt.Println("  fan run <脚本.fan>   运行脚本")
 	fmt.Println("  fan repl             进入交互模式")

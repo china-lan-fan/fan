@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -102,5 +103,53 @@ func TestModuleCircularImport(t *testing.T) {
 	_, err := runModuleSource(t, src)
 	if err == nil {
 		t.Fatal("循环导入应报错")
+	}
+}
+
+func TestModuleChineseExtension(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "工具.凡")
+	if err := os.WriteFile(path, []byte("导出 变量 名 = \"库\"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	loader := NewLoader(dir)
+	mod, err := loader.Load(dir, "工具")
+	if err != nil {
+		t.Fatalf("加载失败：%v", err)
+	}
+	if mod.Exports["名"].Inspect() != "库" {
+		t.Fatalf("模块内容错误：%s", mod.Exports["名"].Inspect())
+	}
+}
+
+func TestModuleExplicitChineseExtension(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "工具.凡")
+	if err := os.WriteFile(path, []byte("导出 变量 名 = \"库\"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	loader := NewLoader(dir)
+	mod, err := loader.Load(dir, "工具.凡")
+	if err != nil {
+		t.Fatalf("加载失败：%v", err)
+	}
+	if mod.Exports["名"].Inspect() != "库" {
+		t.Fatalf("模块内容错误：%s", mod.Exports["名"].Inspect())
+	}
+}
+
+func TestModuleLegacyExtensionStillSupported(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "工具.fan")
+	if err := os.WriteFile(path, []byte("导出 变量 名 = \"旧\"\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	loader := NewLoader(dir)
+	mod, err := loader.Load(dir, "工具")
+	if err != nil {
+		t.Fatalf("加载失败：%v", err)
+	}
+	if mod.Exports["名"].Inspect() != "旧" {
+		t.Fatalf("模块内容错误：%s", mod.Exports["名"].Inspect())
 	}
 }
