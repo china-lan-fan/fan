@@ -65,6 +65,10 @@ func TestVarDeclMustHaveValue(t *testing.T) {
 	expectError(t, `常量 圆周率`)
 }
 
+func TestTernaryMissingColon(t *testing.T) {
+	expectError(t, "真 ? 1")
+}
+
 func TestArithmeticPrecedence(t *testing.T) {
 	cases := []struct {
 		src  string
@@ -82,6 +86,9 @@ func TestArithmeticPrecedence(t *testing.T) {
 		{"1 小于 2 等于 真", "((1 小于 2) 等于 真)"},
 		{"(1 + 2) * 3", "((1 + 2) * 3)"},
 		{"1 + 2 + 3 + 4", "(((1 + 2) + 3) + 4)"},
+		{"真 ? 1 : 2", "(真 ? 1 : 2)"},
+		{"真 ? 1 + 2 : 3", "(真 ? (1 + 2) : 3)"},
+		{"假 ? 1 : 真 ? 2 : 3", "(假 ? 1 : (真 ? 2 : 3))"},
 	}
 	for _, c := range cases {
 		prog := mustParse(t, c.src)

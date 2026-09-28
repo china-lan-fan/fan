@@ -56,6 +56,15 @@ func TestBasicSymbols(t *testing.T) {
 	})
 }
 
+func TestQuestionAndColon(t *testing.T) {
+	expect(t, "? ？ :", []token.Token{
+		{Type: token.QUEST, Literal: "?"},
+		{Type: token.QUEST, Literal: "？"},
+		{Type: token.COLON, Literal: ":"},
+		{Type: token.EOF, Literal: ""},
+	})
+}
+
 func TestCompoundAndUpdateSymbols(t *testing.T) {
 	expect(t, "+= -= *= /= ++ --", []token.Token{
 		{Type: token.PLUS_EQ, Literal: "+="},

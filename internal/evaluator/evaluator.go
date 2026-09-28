@@ -92,6 +92,8 @@ func Eval(node ast.Node, env *Environment) (object.Object, error) {
 		return object.Null, nil
 	case *ast.Identifier:
 		return evalIdentifier(n, env)
+	case *ast.TernaryExpr:
+		return evalTernaryExpr(n, env)
 	case *ast.BinaryExpr:
 		return evalBinaryExpr(n, env)
 	case *ast.UnaryExpr:
@@ -252,6 +254,21 @@ func evalIdentifier(ident *ast.Identifier, env *Environment) (object.Object, err
 		return nil, fmt.Errorf("变量 %s 未声明", ident.Name)
 	}
 	return val, nil
+}
+
+func evalTernaryExpr(expr *ast.TernaryExpr, env *Environment) (object.Object, error) {
+	cond, err := Eval(expr.Cond, env)
+	if err != nil {
+		return nil, err
+	}
+	b, ok := cond.(*object.Bool)
+	if !ok {
+		return nil, &EvalError{Pos: expr.Position, Reason: fmt.Sprintf("三元表达式条件必须是布尔，实际是 %s", cond.Kind())}
+	}
+	if b.Value {
+		return Eval(expr.Then, env)
+	}
+	return Eval(expr.Else, env)
 }
 
 func evalBinaryExpr(expr *ast.BinaryExpr, env *Environment) (object.Object, error) {

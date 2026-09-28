@@ -280,6 +280,19 @@ func (n *UnaryExpr) String() string {
 	return fmt.Sprintf("(%s%s%s)", n.Op, sep, n.Right.String())
 }
 
+type TernaryExpr struct {
+	Position Position
+	Cond     Expression
+	Then     Expression
+	Else     Expression
+}
+
+func (n *TernaryExpr) Pos() Position   { return n.Position }
+func (n *TernaryExpr) expressionNode() {}
+func (n *TernaryExpr) String() string {
+	return fmt.Sprintf("(%s ? %s : %s)", n.Cond.String(), n.Then.String(), n.Else.String())
+}
+
 type BinaryExpr struct {
 	Position Position
 	Op       string

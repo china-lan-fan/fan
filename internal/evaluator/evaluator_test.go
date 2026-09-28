@@ -155,6 +155,23 @@ func TestComparisonTypeMismatch(t *testing.T) {
 	mustError(t, `真 == 1`, "不同类型不可比较")
 }
 
+func TestTernary(t *testing.T) {
+	mustInt(t, "真 ? 1 : 2", 1)
+	mustInt(t, "假 ? 1 : 2", 2)
+	mustInt(t, "1 大于 2 ? 10 : 20", 20)
+	mustInt(t, "真 ? 1 + 2 : 3", 3)
+	mustInt(t, "变量 x = 真\nx ？ 1 ： 2", 1)
+}
+
+func TestTernaryLazy(t *testing.T) {
+	mustInt(t, "真 ? 1 : 1 除 0", 1)
+	mustInt(t, "假 ? 1 除 0 : 2", 2)
+}
+
+func TestTernaryConditionType(t *testing.T) {
+	mustError(t, "1 ? 2 : 3", "布尔")
+}
+
 func TestLogic(t *testing.T) {
 	mustBool(t, "真 且 真", true)
 	mustBool(t, "真 && 假", false)

@@ -15,6 +15,7 @@ type precedence int
 const (
 	_ precedence = iota
 	LOWEST
+	PREC_TERNARY
 	PREC_OR
 	PREC_AND
 	PREC_EQUALS
@@ -26,6 +27,7 @@ const (
 )
 
 var precedences = map[token.Type]precedence{
+	token.QUEST:   PREC_TERNARY,
 	token.OR:      PREC_OR,
 	token.AND:     PREC_AND,
 	token.EQ:      PREC_EQUALS,
@@ -638,7 +640,7 @@ func (p *Parser) parseExpression(prec precedence) ast.Expression {
 			p.cur.Type == token.RPAREN || p.cur.Type == token.RBRACK || p.cur.Type == token.END ||
 			p.cur.Type == token.THEN || p.cur.Type == token.ELSE || p.cur.Type == token.ELSEIF ||
 			p.cur.Type == token.LOOP || p.cur.Type == token.TIMES || p.cur.Type == token.UNTIL ||
-			p.cur.Type == token.INOF {
+			p.cur.Type == token.INOF || p.cur.Type == token.COLON {
 			return left
 		}
 		if p.cur.Type == token.MEMBER || p.cur.Type == token.DOT {
@@ -987,6 +989,23 @@ func (p *Parser) parsePrefix() ast.Expression {
 
 func (p *Parser) parseInfix(left ast.Expression) ast.Expression {
 	pos := ast.Position{Line: p.cur.Line, Column: p.cur.Column}
+	if p.cur.Type == token.QUEST {
+		p.next()
+		thenExpr := p.parseExpression(LOWEST)
+		if thenExpr == nil {
+			return nil
+		}
+		if p.cur.Type != token.COLON {
+			p.addError(p.cur, "三元表达式缺少 :")
+			return nil
+		}
+		p.next()
+		elseExpr := p.parseExpression(LOWEST)
+		if elseExpr == nil {
+			return nil
+		}
+		return &ast.TernaryExpr{Position: pos, Cond: left, Then: thenExpr, Else: elseExpr}
+	}
 	op := p.cur.Literal
 	pr := p.currentPrecedence()
 	p.next()

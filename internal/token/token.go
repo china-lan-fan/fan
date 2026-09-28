@@ -44,6 +44,7 @@ const (
 	LBRACE Type = "LBRACE"
 	RBRACE Type = "RBRACE"
 	COMMA  Type = "COMMA"
+	QUEST  Type = "QUEST"
 	ARROW  Type = "ARROW"
 	METHOD Type = "METHOD"
 	SELF   Type = "SELF"
