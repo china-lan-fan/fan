@@ -6,7 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$Owner = "china-lan-fan"
+$Owner = "china-lang-fan"
 $Repo = "fan"
 $Binary = "fan.exe"
 

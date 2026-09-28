@@ -43,16 +43,16 @@
 ### Linux / macOS
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/china-lan-fan/fan/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/china-lang-fan/fan/main/scripts/install.sh | bash
 ```
 
 ### Windows
 
 ```powershell
-irm https://raw.githubusercontent.com/china-lan-fan/fan/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/china-lang-fan/fan/main/scripts/install.ps1 | iex
 ```
 
-也可以从 [GitHub Releases](https://github.com/china-lan-fan/fan/releases) 下载对应平台的压缩包。
+也可以从 [GitHub Releases](https://github.com/china-lang-fan/fan/releases) 下载对应平台的压缩包。
 
 安装后验证：
 
@@ -80,7 +80,7 @@ fan repl
 fan help
 ```
 
-更多示例见 [`examples/`](./examples)，完整文档见 <https://china-lan-fan.github.io/>。
+更多示例见 [`examples/`](./examples)，完整文档见 <https://china-lang-fan.github.io/>。
 
 ## 从源码构建
 
@@ -93,7 +93,7 @@ go test ./...
 
 ## 编辑器支持
 
-- [VS Code 插件](https://github.com/china-lan-fan/fan-code-plugin)：语法高亮、代码片段、注释切换、运行脚本和 REPL
+- [VS Code 插件](https://github.com/china-lang-fan/fan-code-plugin)：语法高亮、代码片段、注释切换、运行脚本和 REPL
 - JetBrains 插件：见 [`fan-jetbrains-plugin`](../fan-jetbrains-plugin)
 
 ## 许可证

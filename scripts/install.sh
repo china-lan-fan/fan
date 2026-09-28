@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-OWNER="china-lan-fan"
+OWNER="china-lang-fan"
 REPO="fan"
 BINARY="fan"
 

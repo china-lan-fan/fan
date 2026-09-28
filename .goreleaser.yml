@@ -50,9 +50,9 @@ nfpms:
     section: devel
     priority: optional
     license: MIT
-    maintainer: china-lan-fan <xqcaoai@xqcao.com>
+    maintainer: china-lang-fan <xqcaoai@xqcao.com>
     description: 凡语言（fan）——中文通用脚本语言解释器
-    homepage: https://china-lan-fan.github.io/
+    homepage: https://china-lang-fan.github.io/
     bindir: /usr/local/bin
     contents:
       - src: LICENSE
@@ -76,7 +76,7 @@ changelog:
 
 release:
   github:
-    owner: china-lan-fan
+    owner: china-lang-fan
     name: fan
   draft: false
   prerelease: auto
